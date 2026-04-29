@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ultimate Student Pro</title>
+    
+    <style>
+        :root {
+            --primary: #8B5CF6;
+            --primary-dark: #7C3AED;
+            --bg: #F3F4F6;
+            --surface: #ffffff;
+            --text: #1F2937;
+            --text-light: #6B7280;
+            --border: #E5E7EB;
+            --success: #10B981;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+        body { background-color: var(--bg); height: 100vh; overflow: hidden; color: var(--text); }
+        button { cursor: pointer; }
+
+        .hidden { display: none !important; }
+        .btn {
+            padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer;
+            font-weight: 600; transition: 0.2s; background: var(--primary); color: white;
+        }
+        .btn:hover { background: var(--primary-dark); }
+        .btn-sm { padding: 5px 10px; font-size: 0.85rem; }
+        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+        .btn-outline:hover { background: #f9fafb; }
+        .danger { color: red; cursor: pointer; font-weight: bold; }
+        .link { color: var(--primary); cursor: pointer; text-decoration: underline; font-weight: bold; }
+
+        input, select, textarea {
+            width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid var(--border);
+            border-radius: 6px; outline: none; font-size: 1rem;
+        }
+        input:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2); }
+
+        #auth-screen {
+            position: fixed; inset: 0; background: var(--bg); z-index: 50;
+            display: flex; justify-content: center; align-items: center;
+        }
+        .auth-card {
+            background: var(--surface); padding: 3rem; border-radius: 20px;
+            box-shadow: 0 25px 30px -5px rgba(0,0,0,0.1); width: 100%; max-width: 400px;
+            text-align: center;
+        }
+        .auth-toggle { margin-top: 20px; font-size: 0.95rem; color: #666; border-top: 1px solid #eee; padding-top: 15px; }
+
+        #dashboard-screen { display: flex; height: 100vh; }
+
+        aside {
+            width: 260px; background: var(--surface); border-right: 1px solid var(--border);
+            display: flex; flex-direction: column; padding: 1.5rem;
+        }
+        .brand { font-size: 1.5rem; font-weight: 900; color: var(--primary); margin-bottom: 2.5rem; display: flex; align-items: center; gap: 10px;}
+        .nav-item {
+            padding: 14px; border-radius: 12px; cursor: pointer; margin-bottom: 8px;
+            display: flex; align-items: center; gap: 12px; color: var(--text-light);
+            transition: 0.2s; font-weight: 500;
+        }
+        .nav-item:hover { background: #F5F3FF; color: var(--primary); }
+        .nav-item.active { background: var(--primary); color: white; box-shadow: 0 10px 15px rgba(139, 92, 246, 0.3); }
+
+        .user-profile { margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+        .avatar { width: 40px; height: 40px; background: var(--primary); color: white; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size:1.1rem; }
+
+        main { flex: 1; padding: 2rem; overflow-y: auto; position: relative; }
+        .section-header { margin-bottom: 2rem; }
+        .section-header h2 { font-size: 1.8rem; color: var(--text); }
+        .section-header p { color: var(--text-light); }
+
+        .ppt-container { display: grid; grid-template-columns: 300px 1fr; gap: 2rem; height: calc(100vh - 150px); }
+        .ppt-controls { background: var(--surface); padding: 1.5rem; border-radius: 16px; border: 1px solid var(--border); overflow-y: auto; }
+        .ppt-slide-viewer { background: #1a1a1a; border-radius: 16px; display: flex; justify-content: center; align-items: center; position: relative; overflow: hidden; }
+
+        .slide {
+            width: 100%; max-width: 850px; aspect-ratio: 16/9; background: white;
+            padding: 40px; box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            text-align: center; animation: slideIn 0.4s ease;
+        }
+        @keyframes slideIn { from { opacity:0; transform: scale(0.9); } to { opacity:1; transform: scale(1); } }
+        .slide h1 { font-size: 2.8rem; color: #333; margin-bottom: 15px; line-height:1.2; }
+        .slide img { max-width: 80%; max-height: 250px; border-radius: 10px; margin: 20px 0; object-fit: cover; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+        .slide ul { text-align: left; font-size: 1.2rem; color: #444; line-height:1.8; list-style-position: inside; width: 100%; }
+
+        .ppt-nav { position: absolute; bottom: 20px; width: 100%; text-align: center; }
+        .ppt-nav button { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 12px 25px; margin: 0 5px; border-radius: 50px; cursor: pointer; backdrop-filter: blur(5px); }
+        .ppt-nav button:hover { background: rgba(255,255,255,0.3); }
+
+        .chat-container { background: var(--surface); border-radius: 16px; border: 1px solid var(--border); height: calc(100vh - 140px); display: flex; flex-direction: column; }
+        .chat-messages { flex: 1; padding: 1.5rem; overflow-y: auto; display: flex; flex-direction: column; gap: 1rem; }
+        .msg { max-width: 80%; padding: 14px 18px; border-radius: 18px; font-size: 0.95rem; line-height: 1.6; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .msg.bot { background: #F3F4F6; align-self: flex-start; border-bottom-left-radius: 2px; color: #374151; border: 1px solid #E5E7EB; }
+        .msg.user { background: var(--primary); color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
+        .chat-input-area { padding: 1.5rem; border-top: 1px solid var(--border); display: flex; gap: 10px; background: #FAFAFA; }
+
+        .resume-layout { display: grid; grid-template-columns: 350px 1fr; gap: 2rem; height: 100%; }
+        .resume-form { overflow-y: auto; padding-right: 10px; }
+        .resume-preview { background: white; padding: 2.5rem; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); overflow-y: auto; font-family: 'Georgia', serif; }
+        .res-section { margin-bottom: 20px; }
+        .res-title { font-size: 1.1rem; font-weight: bold; border-bottom: 2px solid #333; padding-bottom: 5px; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; }
+        .edu-list-item { background: #eff6ff; padding: 8px; margin-bottom: 5px; border-radius: 4px; font-size: 0.9rem; display: flex; justify-content: space-between; align-items: center;}
+
+        .q-paper-setup { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+        .setup-box { background: var(--surface); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border); }
+        .topic-list { list-style: none; margin-top: 10px; }
+        .topic-list li { background: #EEF2FF; padding: 8px; margin-bottom: 5px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; }
+        .paper-view { background: white; padding: 2rem; border: 1px solid #ccc; box-shadow: 0 4px 6px rgba(0,0,0,0.1); font-family: 'Times New Roman', serif; display: none; margin-top: 2rem; }
+        .paper-view.active { display: block; }
+
+        .tt-setup { display: flex; gap: 2rem; }
+        .tt-inputs { width: 300px; background: var(--surface); padding: 1.5rem; border-radius: 12px; height: fit-content; border: 1px solid var(--border); }
+        .schedule-output { flex: 1; background: var(--surface); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border); }
+        .slot-item, .subject-item { background: #F3F4F6; padding: 8px; margin-bottom: 5px; border-radius: 4px; font-size: 0.9rem; display: flex; justify-content: space-between; }
+        
+        .yt-search-box { max-width: 600px; margin: 0 auto; text-align: center; }
+        .success-msg { margin-top: 20px; padding: 20px; background: #ECFDF5; border: 1px solid #10B981; border-radius: 10px; color: #065F46; display: none;}
+    </style>
+</head>
+<body>
+    <div id="auth-screen">
+        <div id="signin-card" class="auth-card">
+            <h2 style="color: var(--primary); margin-bottom: 10px;">Welcome Back!</h2>
+            <p style="margin-bottom: 20px; color: #666;">Login to access your dashboard</p>
+            <input type="text" id="signin-username" placeholder="Username">
+            <input type="password" id="signin-password" placeholder="Password">
+            <button class="btn" onclick="handleLogin()" style="width: 100%; margin-top: 10px;">Login</button>
+            <div class="auth-toggle">
+                New here? <span class="link" onclick="toggleAuth('signup')">Create Account</span>
+            </div>
+        </div>
+        <div id="signup-card" class="auth-card hidden">
+            <h2 style="color: var(--primary); margin-bottom: 10px;">Join Us!</h2>
+            <p style="margin-bottom: 20px; color: #666;">Create your account for free</p>
+            <input type="text" id="signup-username" placeholder="Choose Username">
+            <input type="password" id="signup-password" placeholder="Choose Password">
+            <button class="btn" onclick="handleSignup()" style="width: 100%; margin-top: 10px;">Sign Up</button>
+            <div class="auth-toggle">
+                Already have an account? <span class="link" onclick="toggleAuth('signin')">Login</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="dashboard-screen" class="hidden">
+        <aside>
+            <div class="brand"><span>⚡</span> EduAI Pro</div>
+            <div class="nav-item active" onclick="switchTab('tab-home', this)">🏠 Home</div>
+            <div class="nav-item" onclick="switchTab('tab-chat', this)">🤖 AI Buddy</div>
+            <div class="nav-item" onclick="switchTab('tab-resume', this)">📄 Resume Build</div>
+            <div class="nav-item" onclick="switchTab('tab-paper', this)">📝 Q-Paper Gen</div>
+            <div class="nav-item" onclick="switchTab('tab-ppt', this)">📊 AI PPT</div>
+            <div class="nav-item" onclick="switchTab('tab-timetable', this)">📅 Time Table</div>
+            <div class="nav-item" onclick="switchTab('tab-topic', this)">🔍 Find Topic</div>
+            <div class="user-profile">
+                <div class="avatar">U</div>
+                <div><b id="display-username">User</b><br><small>Student</small></div>
+                <button onclick="logout()" style="background:none; border:none; color:red; font-size:1.2rem; margin-left:auto;">⏻</button>
+            </div>
+        </aside>
+
+        <main>
+            <section id="tab-home" class="fade-in">
+                <div class="section-header">
+                    <h2>Hey, <span id="home-username">Bro</span>! 👋</h2>
+                    <p>Ready to study today? Let's go.</p>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;">
+                    <div style="background:white; padding:1.5rem; border-radius:10px; border:1px solid #eee;">
+                        <h3>Friend AI</h3>
+                        <p style="color:#666; font-size:0.9rem;">Chat like a friend.</p>
+                    </div>
+                    <div style="background:white; padding:1.5rem; border-radius:10px; border:1px solid #eee;">
+                        <h3>Auto PPT</h3>
+                        <p style="color:#666; font-size:0.9rem;">Text & Images added by AI.</p>
+                    </div>
+                    <div style="background:white; padding:1.5rem; border-radius:10px; border:1px solid #eee;">
+                        <h3>User DB</h3>
+                        <p style="color:#666; font-size:0.9rem;">Register & Login system.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="tab-chat" class="hidden">
+                <div class="section-header"><h2>Chat with AI Buddy</h2></div>
+                <div class="chat-container">
+                    <div class="chat-messages" id="chat-messages">
+                        <div class="msg bot">Kya haal hai dost? Main tumhara AI friend hoon. Aaj kya plan hai padhne ka? 🤙</div>
+                    </div>
+                    <div class="chat-input-area">
+                        <input type="text" id="chat-input" placeholder="Kuch bhi likh yaar..." style="margin:0;" onkeypress="if(event.key==='Enter') sendMessage()">
+                        <button class="btn" onclick="sendMessage()">Send</button>
+                    </div>
+                </div>
+            </section>
+
+            <section id="tab-resume" class="hidden">
+                <div class="section-header"><h2>Professional Resume Builder</h2></div>
+                <div class="resume-layout">
+                    <div class="resume-form">
+                        <h4 style="margin-bottom:10px; color:var(--primary);">1. Personal Details</h4>
+                        <input type="text" id="res-name" placeholder="Full Name" oninput="updateResume()">
+                        <input type="text" id="res-role" placeholder="Job Title" oninput="updateResume()">
+                        <input type="text" id="res-mobile" placeholder="Mobile No." oninput="updateResume()">
+                        <input type="email" id="res-gmail" placeholder="Gmail ID" oninput="updateResume()">
+                        <input type="text" id="res-loc" placeholder="Location" oninput="updateResume()">
+                        <input type="date" id="res-dob" oninput="updateResume()">
+                        <h4 style="margin:15px 0 10px 0; color:var(--primary);">2. Education</h4>
+                        <input type="text" id="edu-degree" placeholder="Degree">
+                        <input type="text" id="edu-school" placeholder="School/College">
+                        <input type="text" id="edu-year" placeholder="Year">
+                        <button class="btn btn-sm btn-outline" style="width:100%;" onclick="addEducation()">+ Add Education</button>
+                        <ul id="edu-list-ul" style="list-style:none; margin-top:10px;"></ul>
+                        <h4 style="margin:15px 0 10px 0; color:var(--primary);">3. Skills</h4>
+                        <textarea id="res-skills" rows="3" placeholder="HTML, Python..." oninput="updateResume()"></textarea>
+                    </div>
+                    <div class="resume-preview" id="resume-preview">
+                        <div style="text-align:center; border-bottom: 2px solid #333; padding-bottom: 15px; margin-bottom: 20px;">
+                            <h1 id="out-name" style="text-transform:uppercase; margin-bottom:5px; font-size:2rem;">YOUR NAME</h1>
+                            <p id="out-role" style="color:#555; font-style:italic; font-size:1.2rem;">Job Title</p>
+                            <p style="margin-top:10px; font-size:0.9rem;">
+                                📱 <span id="out-mobile">Mobile</span> | ✉️ <span id="out-gmail">Email</span><br>
+                                📍 <span id="out-loc">Location</span> | 🎂 <span id="out-dob">DOB</span>
+                            </p>
+                        </div>
+                        <div class="res-section">
+                            <div class="res-title">Education</div>
+                            <div id="out-edu-list"></div>
+                        </div>
+                        <div class="res-section">
+                            <div class="res-title">Skills</div>
+                            <p id="out-skills" style="font-size:0.95rem;">Skills...</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="tab-paper" class="hidden">
+                <div class="section-header"><h2>Smart Question Paper</h2></div>
+                <div class="q-paper-setup">
+                    <div class="setup-box">
+                        <label>1. Subject Name</label>
+                        <input type="text" id="qp-subject" placeholder="e.g. Physics">
+                        <label>2. Important Topics</label>
+                        <div style="display:flex; gap:5px;">
+                            <input type="text" id="qp-topic-input" placeholder="Topic Name">
+                            <button class="btn btn-sm" onclick="addTopic()">+</button>
+                        </div>
+                        <ul id="added-topics" class="topic-list"></ul>
+                        <label style="margin-top:20px;">3. Total Marks</label>
+                        <input type="number" id="qp-marks" placeholder="e.g. 50">
+                        <button class="btn" style="width:100%; margin-top:15px;" onclick="generatePaper()">Generate Paper</button>
+                    </div>
+                    <div id="paper-result" class="paper-view">
+                        <div style="text-align:center; border-bottom:2px solid #000; margin-bottom:20px;">
+                            <h2 id="res-subject">Subject Name</h2>
+                            <p>Final Examination - 2024</p>
+                            <p>Time: 2 Hrs | Max Marks: <span id="res-marks">--</span></p>
+                        </div>
+                        <div id="questions-body"></div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="tab-ppt" class="hidden">
+                <div class="section-header"><h2>AI Presentation Creator</h2></div>
+                <div id="ppt-setup" class="ppt-container">
+                    <div class="ppt-controls">
+                        <label>Presentation Title</label>
+                        <input type="text" id="ppt-title-input" placeholder="e.g. Solar System">
+                        <label>Only Topics (One per line)</label>
+                        <textarea id="ppt-topic-input" rows="8" placeholder="Sun&#10;Planets&#10;Stars..."></textarea>
+                        <button class="btn" style="width:100%; margin-top:20px; background:#2563EB;" onclick="generateSmartPPT()">✨ Create with AI</button>
+                    </div>
+                    <div class="ppt-slide-viewer hidden" id="ppt-viewer-area">
+                        <div id="current-slide" class="slide"></div>
+                        <div class="ppt-nav">
+                            <button onclick="prevSlide()">◀</button>
+                            <span id="slide-indicator" style="color:white; margin:0 10px;">1 / 5</span>
+                            <button onclick="nextSlide()">▶</button>
+                            <button onclick="closePPT()" style="background:red; border:none; margin-left:20px;">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="tab-timetable" class="hidden">
+                <div class="section-header"><h2>Personal Study Schedule</h2></div>
+                <div class="tt-setup">
+                    <div class="tt-inputs">
+                        <label>Step 1: Add Free Slots</label>
+                        <div style="display:flex; gap:5px;">
+                            <select id="slot-day" style="margin-bottom:0; width:40%;">
+                                <option value
+                                </option>
+                            <option value="Fri">Fri</option>
+                            <option value="Sat">Sat</option>
+                            <option value="Sun">Sun</option>
+                        </select>
+                        <input type="time" id="slot-time" style="margin-bottom:0; width:60%;">
+                    </div>
+                    <button class="btn btn-sm btn-outline" style="width:100%; margin:5px 0 15px 0;" onclick="addFreeSlot()">Add Slot</button>
+                    <ul id="slots-list" style="list-style:none; margin-bottom:20px;"></ul>
+                    <label>Step 2: Add Subjects</label>
+                    <input type="text" id="sub-input" placeholder="Subject Name">
+                    <button class="btn btn-sm btn-outline" style="width:100%; margin-bottom:10px;" onclick="addSubject()">Add Subject</button>
+                    <ul id="subs-list" style="list-style:none;"></ul>
+                    <button class="btn" style="width:100%; background:var(--success);" onclick="createSchedule()">Create Schedule</button>
+                </div>
+                <div class="schedule-output">
+                    <h3 style="margin-bottom:15px;">Your Study Plan:</h3>
+                    <div id="final-schedule"></div>
+                </div>
+            </div>
+        </section>
+
+        <section id="tab-topic" class="hidden">
+            <div class="section-header"><h2>Find Topic (YouTube)</h2></div>
+            <div class="yt-search-box">
+                <p style="margin-bottom:15px; color:#666;">Type topic. YouTube opens in new tab.</p>
+                <input type="text" id="yt-input" class="search-big" placeholder="e.g. Integration..." style="padding:15px; font-size:1.1rem; border:2px solid #ddd; border-radius:30px;">
+                <br><br>
+                <button class="btn" style="background: #FF0000;" onclick="openYoutube()">📺 Open in YouTube</button>
+                <div id="yt-success" class="success-msg">✅ Redirecting to YouTube...</div>
+            </div>
+        </section>
+        </main>
+    </div>
+
+    <script>
+        const DB_KEY = 'eduaipro_users_v8';
+
+        function getDB() {
+            const data = localStorage.getItem(DB_KEY);
+            return data ? JSON.parse(data) : [];
+        }
+
+        function saveUser(user) {
+            const db = getDB();
+            db.push(user);
+            localStorage.setItem(DB_KEY, JSON.stringify(db));
+        }
+
+        function toggleAuth(mode) {
+            if(mode === 'signup') {
+                document.getElementById('signin-card').classList.add('hidden');
+                document.getElementById('signup-card').classList.remove('hidden');
+            } else {
+                document.getElementById('signup-card').classList.add('hidden');
+                document.getElementById('signin-card').classList.remove('hidden');
+            }
+        }
+
+        function handleSignup() {
+            const u = document.getElementById('signup-username').value.trim();
+            const p = document.getElementById('signup-password').value.trim();
+            if(!u || !p) { alert('⚠️ Username and Password required!'); return; }
+            const db = getDB();
+            if(db.find(user => user.username === u)) {
+                alert('⚠️ Ye username pehle se use ho chuka hai! Alag try karo.'); return;
+            }
+            saveUser({username: u, password: p});
+            alert('✅ Account ban gaya bhai! Ab login kar lo.');
+            toggleAuth('signin');
+        }
+
+        function handleLogin() {
+            const u = document.getElementById('signin-username').value.trim();
+            const p = document.getElementById('signin-password').value.trim();
+            if(u === 'admin' && p === '123') {
+                loginSuccess('Admin'); return;
+            }
+            const db = getDB();
+            const validUser = db.find(user => user.username === u && user.password === p);
+            if(validUser) {
+                loginSuccess(validUser.username);
+            } else {
+                alert('❌ Galat username/password hai ya fir account hi nahi hai. Pehle Signup karo.');
+            }
+        }
+
+        function loginSuccess(username) {
+            document.getElementById('display-username').textContent = username;
+            document.getElementById('home-username').textContent = username;
+            document.getElementById('auth-screen').classList.add('hidden');
+            document.getElementById('dashboard-screen').classList.remove('hidden');
+        }
+
+        function logout() { location.reload(); }
+
+        function switchTab(id, el) {
+            document.querySelectorAll('main > section').forEach(s => s.classList.add('hidden'));
+            document.getElementById(id).classList.remove('hidden');
+            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+            el.classList.add('active');
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('chat-input');
+            const txt = input.value.trim();
+            if(!txt) return;
+            const box = document.getElementById('chat-messages');
+            box.innerHTML += `<div class="msg user">${input.value}</div>`;
+            input.value = '';
+            box.scrollTop = box.scrollHeight;
+            const lowerTxt = txt.toLowerCase();
+            let reply = "";
+            if(lowerTxt.includes('hello') || lowerTxt.includes('hi') || lowerTxt.includes('hey')) {
+                reply = "Hello bro! Kya scene hai aaj? Padhai start karein kya?";
+            } else if (lowerTxt.includes('kaise ho') || lowerTxt.includes('how are you')) {
+                reply = "Main bilkul fit hoon yaar, code run karke enjoy kar raha hoon. Tum batao kaisa chal raha hai?";
+            } else if (lowerTxt.includes('bore') || lowerTxt.includes('pakau') || lowerTxt.includes('bored')) {
+                reply = "Arre bhai bore mat ho. Chalo padhte hain, phir free time mein game khelenge. Topic batao, main samjhata hoon.";
+            } else if (lowerTxt.includes('thanks') || lowerTxt.includes('thank you')) {
+                reply = "Koi bat nahi dost, main tumhara friend hi na. Agar kuch aur puchna hai toh bataana!";
+            } else if (lowerTxt.includes('gravity')) {
+                reply = "Gravity matlab wo shakti jise hum gavakti hain. Ye dharti ko sun mein jode rakti hai. Sirf isliye hum zameen par khade rehte hain, nahi toh ud jate! Samajh aaya ya detail chahiye?";
+            } else if (lowerTxt.includes('photosynthesis')) {
+                reply = "Photosynthesis wo process hai jisme paudhe apna khud ka bana lete hain sunlight se. Mano plants ki factory hai jo khana banati hai. Sunlight paani CO2 lene ko kehte hain ye.";
+            } else if (lowerTxt.includes('html')) {
+                reply = "HTML toh webpage ka skeleton hai. Iske bina body nahi banegi! Tags jaise <h1>, <p> use karte hain. Isko seekhne ke baad CSS aata hai styling ke liye.";
+            } else if (lowerTxt.includes('python')) {
+                reply = "Python ek bahut cool language hai. Uski syntax English jaisi simple hai. AI aur Data Science ke liye toh ye number 1 hai.";
+            } else {
+                reply = `Ye topic "${txt}" toh interesting lag raha hai! Main iske baare mein abhi detailed knowledge nahi pa raha, par tum 'Find Topic' tab mein jaake iska video dekh lo, usse aur accha samajh aayega. Or agar koi aur sawaal hai toh puchte raho!`;
+            }
+            setTimeout(() => {
+                box.innerHTML += `<div class="msg bot">${reply}</div>`;
+                box.scrollTop = box.scrollHeight;
+            }, 600);
+        }
+
+        let educationList = [];
+        function updateResume() {
+            document.getElementById('out-name').textContent = document.getElementById('res-name').value || "YOUR NAME";
+            document.getElementById('out-role').textContent = document.getElementById('res-role').value || "Job Title";
+            document.getElementById('out-mobile').textContent = document.getElementById('res-mobile').value || "Mobile";
+            document.getElementById('out-gmail').textContent = document.getElementById('res-gmail').value || "Email";
+            document.getElementById('out-loc').textContent = document.getElementById('res-loc').value || "Location";
+            document.getElementById('out-dob').textContent = document.getElementById('res-dob').value || "DOB";
+            document.getElementById('out-skills').textContent = document.getElementById('res-skills').value || "Skills...";
+            renderEducationPreview();
+        }
+        function addEducation() {
+            const deg = document.getElementById('edu-degree').value;
+            const sch = document.getElementById('edu-school').value;
+            const yr = document.getElementById('edu-year').value;
+            if(deg && sch) {
+                educationList.push({degree: deg, school: sch, year: yr});
+                const li = document.createElement('li');
+                li.className = 'edu-list-item';
+                li.innerHTML = `<span>${deg} (${sch})</span> <span class="danger" onclick="removeEdu(${educationList.length-1})">×</span>`;
+                document.getElementById('edu-list-ul').appendChild(li);
+                document.getElementById('edu-degree').value = ''; document.getElementById('edu-school').value = ''; document.getElementById('edu-year').value = '';
+                updateResume();
+            }
+        }
+        function removeEdu(index) {
+            educationList.splice(index, 1);
+            const ul = document.getElementById('edu-list-ul'); ul.innerHTML = '';
+            educationList.forEach((e, i) => {
+                const li = document.createElement('li'); li.className = 'edu-list-item';
+                li.innerHTML = `<span>${e.degree} (${e.school})</span> <span class="danger" onclick="removeEdu(${i})">×</span>`;
+                ul.appendChild(li);
+            });
+            updateResume();
+        }
+        function renderEducationPreview() {
+            const container = document.getElementById('out-edu-list'); container.innerHTML = '';
+            if(educationList.length === 0) { container.innerHTML = '<p style="color:#999;">No education added yet.</p>'; return; }
+            educationList.forEach(e => {
+                container.innerHTML += `<div class="res-item"><strong>${e.degree}</strong> from ${e.school}<br><small>${e.year}</small></div>`;
+            });
+        }
+
+        let topics = [];
+        function addTopic() {
+            const inp = document.getElementById('qp-topic-input');
+            if(inp.value) {
+                topics.push(inp.value);
+                const li = document.createElement('li');
+                li.innerHTML = `${inp.value} <span class="danger" onclick="this.parentElement.remove()">×</span>`;
+                document.getElementById('added-topics').appendChild(li);
+                inp.value = '';
+            }
+        }
+        function generatePaper() {
+            const sub = document.getElementById('qp-subject').value;
+            const totalMarks = parseInt(document.getElementById('qp-marks').value);
+            if(!sub || topics.length === 0 || !totalMarks) { alert('Please fill details'); return; }
+            document.getElementById('res-subject').textContent = sub;
+            document.getElementById('res-marks').textContent = totalMarks;
+            const body = document.getElementById('questions-body'); body.innerHTML = '';
+            const marksPerTopic = Math.floor(totalMarks / topics.length);
+            let marksDistributed = 0;
+            topics.forEach((t, i) => {
+                let qMarks = marksPerTopic;
+                if(i === topics.length - 1) qMarks = totalMarks - marksDistributed; else marksDistributed += qMarks;
+                body.innerHTML += `<div style="margin-bottom:20px; border-bottom:1px dotted #ccc; padding-bottom:10px;"><strong>Q${i+1}. [${qMarks} Marks]</strong> Explain "${t}" in detail.</div>`;
+            });
+            document.getElementById('paper-result').classList.add('active');
+        }
+
+        let pptData = { title: "", slides: [] };
+        let currentSlideIdx = 0;
+
+        const pptKnowledge = {
+            "sun": { 
+                desc: "Sun is star at center of Solar System. It provides light and energy.", 
+                points: ["Massive ball of hot plasma", "Source of energy for Earth", "Gravity holds the solar system"],
+                img: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=500"
+            },
+            "solar system": {
+                desc: "The Solar System consists of Sun and objects bound by its gravity.",
+                points: ["8 Planets", "Asteroids", "Comets"],
+                img: "https://images.unsplash.com/photo-1614732414444-096e5f1122d5?w=500"
+            },
+            "earth": {
+                desc: "Earth is the third planet from the Sun and is the only astronomical object known to harbor life.",
+                points: ["Water covers 70%", "Has an atmosphere", "Rotates on its axis"],
+                img: "https://images.unsplash.com/photo-1614730341194-75c60740a2d3?w=500"
+            },
+            "water": {
+                desc: "Water is essential for all forms of life. It covers 71% of Earth's surface.",
+                points: ["Tasteless, odorless", "Universal solvent", "Exists in three states"],
+                img: "https://images.unsplash.com/photo-1548685913-fe6678b0d6c1?w=500"
+            },
+            "india": {
+                desc: "India is a country in South Asia. It is the seventh-largest country by area.",
+                points: ["Largest Democracy", "Rich Culture", "Diverse Geography"],
+                img: "https://images.unsplash.com/photo-1524492412937-b28074a5d7da?w=500"
+            }
+        };
+
+        function generateSmartPPT() {
+            const text = document.getElementById('ppt-topic-input').value;
+            const lines = text.split('\n').filter(line => line.trim() !== "");
+            pptData.title = document.getElementById('ppt-title-input').value || "Presentation";
+            pptData.slides = [];
+            pptData.slides.push({ type: 'title', content: pptData.title });
+            lines.forEach((topic) => {
+                const lowerTopic = topic.toLowerCase().trim();
+                let slideContent = { title: topic, desc: "", points: [], img: "" };
+                if(pptKnowledge[lowerTopic]) {
+                    const data = pptKnowledge[lowerTopic];
+                    slideContent.desc = data.desc;
+                    slideContent.points = data.points;
+                    slideContent.img = data.img;
+                } else {
+                    slideContent.desc = `This slide is about ${topic}. It is a very important topic to understand.`;
+                    slideContent.points = ["Key point 1: Introduction", "Key point 2: Importance", "Key point 3: Conclusion"];
+                    slideContent.img = `https://source.unsplash.com/random/800x600/?${encodeURIComponent(topic)}`;
+                }
+                pptData.slides.push({ type: 'content', ...slideContent });
+            });
+            pptData.slides.push({ type: 'end', content: "Thank You!" });
+            document.getElementById('ppt-viewer-area').classList.remove('hidden');
+            currentSlideIdx = 0;
+            renderSlide();
+        }
+
+        function renderSlide() {
+            const slideObj = pptData.slides[currentSlideIdx];
+            const container = document.getElementById('current-slide');
+            const indicator = document.getElementById('slide-indicator');
+            indicator.textContent = `${currentSlideIdx + 1} / ${pptData.slides.length}`;
+            if(slideObj.type === 'title') {
+                container.innerHTML = `<h1>${slideObj.content}</h1><p style="font-size:1.5rem; color:#666;">Created by AI</p>`;
+            } else if(slideObj.type === 'end') {
+                container.innerHTML = `<h1>${slideObj.content}</h1><p style="font-size:1.5rem; color:#666;">Questions?</p>`;
+            } else {
+                let html = `<h1>${slideObj.title}</h1>`;
+                if(slideObj.img) { html += `<img src="${slideObj.img}" alt="${slideObj.title}">`; }
+                html += `<p style="margin-bottom:15px; color:#555;">${slideObj.desc}</p>`;
+                if(slideObj.points.length > 0) {
+                    html += `<ul>`;
+                    slideObj.points.forEach(p => html += `<li>${p}</li>`);
+                    html += `</ul>`;
+                }
+                container.innerHTML = html;
+            }
+        }
+        function nextSlide() { if(currentSlideIdx < pptData.slides.length - 1) { currentSlideIdx++; renderSlide(); } }
+        function prevSlide() { if(currentSlideIdx > 0) { currentSlideIdx--; renderSlide(); } }
+        function closePPT() { document.getElementById('ppt-viewer-area').classList.add('hidden'); }
+
+        let freeSlots = []; let subjects = [];
+        function addFreeSlot() {
+            const day = document.getElementById('slot-day').value; const time = document.getElementById('slot-time').value;
+            if(!time) return;
+            freeSlots.push({day, time});
+            document.getElementById('slots-list').innerHTML += `<li class="slot-item"><span>${day} @ ${time}</span> <span class="danger" onclick="this.parentElement.remove()">×</span></li>`;
+        }
+        function addSubject() {
+            const sub = document.getElementById('sub-input').value; if(!sub) return;
+            subjects.push(sub);
+            document.getElementById('subs-list').innerHTML += `<li class="subject-item"><span>${sub}</span> <span class="danger" onclick="this.parentElement.remove()">×</span></li>`;
+            document.getElementById('sub-input').value = '';
+        }
+        function createSchedule() {
+            if(freeSlots.length === 0 || subjects.length === 0) { alert('Add slots and subjects first!'); return; }
+            const output = document.getElementById('final-schedule'); output.innerHTML = '';
+            let subIndex = 0;
+            freeSlots.forEach(slot => {
+                const sub = subjects[subIndex % subjects.length]; subIndex++;
+                output.innerHTML += `<div style="background:#F0FDF4; border:1px solid #BBF7D0; padding:10px; margin-bottom:10px; border-radius:8px; display:flex; justify-content:space-between;"><span>📅 ${slot.day} | ⏰ ${slot.time}</span><span>📚 ${sub}</span></div>`;
+            });
+        }
+
+        function openYoutube() {
+            const topic = document.getElementById('yt-input').value; if(!topic) return;
+            document.getElementById('yt-success').style.display = 'block';
+            const query = encodeURIComponent(topic + " explained in hindi");
+            const url = `https://www.youtube.com/results?search_query=${query}`;
+            setTimeout(() => { window.open(url, '_blank'); }, 500);
+        }
+    </script>
+</body>
+</html>
